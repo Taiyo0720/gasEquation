@@ -1471,16 +1471,16 @@ updateSliderState();
 setInterval(()=>{
 
   state.wallCollisions =
-    Math.floor(wallHits / Math.max(0.1, state.animationSpeed));
+    Math.floor(wallHits); //Math.max(0.1, state.animationSpeed)で割るのはやめた
 
   state.pistonCollisions =
-    Math.floor(pistonHits / Math.max(0.1, state.animationSpeed));
+    Math.floor(pistonHits);
 
   wallCollisionLabel.textContent =
-    Math.floor(wallHits / Math.max(0.1, state.animationSpeed));
+    Math.floor(wallHits);
 
   pistonCollisionLabel.textContent =
-    Math.floor(pistonHits / Math.max(0.1, state.animationSpeed));
+    Math.floor(pistonHits);
 
   wallHits = 0;
   pistonHits = 0;
