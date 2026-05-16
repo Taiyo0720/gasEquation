@@ -571,6 +571,24 @@ input[type="range"]{
 
       </div>
 
+      <div class="control">
+
+        <div class="control-header">
+          <span>体積スケール</span>
+          <span id="volumeScaleLabel"></span>
+        </div>
+
+        <input
+          type="range"
+          id="volumeScaleSlider"
+          min="1"
+          max="12"
+          value="4"
+          step="0.1"
+        >
+
+      </div>
+
       <div class="info">
 
         気体分子とピストンの衝突：
@@ -636,13 +654,12 @@ input[type="range"]{
 let wallHits = 0;
 let pistonHits = 0;
 
-const volumeScale = 4;
-
 const R = 8.314;
 
 const state = {
 
  animationSpeed: 1,
+ volumeScale: 4,
 
   P:100,
   V:22.4,
@@ -719,6 +736,12 @@ const speedSlider =
 
 const speedLabel =
   document.getElementById("speedLabel");
+
+const volumeScaleSlider =
+  document.getElementById("volumeScaleSlider");
+
+const volumeScaleLabel =
+  document.getElementById("volumeScaleLabel");
 
 const wallCollisionLabel =
   document.getElementById(
@@ -810,7 +833,7 @@ function updateSliderState(){
 function updatePiston(){
 
   const y =
-    480 - state.V * volumeScale;
+    480 - state.V * state.volumeScale;
 
   piston.style.top = y + "px";
 
@@ -830,7 +853,7 @@ function updatePiston(){
 function createMolecules(){
 
   const pistonTop =
-    480 - state.V * volumeScale;
+    480 - state.V * state.volumeScale;
 
   state.gases.forEach(g=>{
 
@@ -969,7 +992,7 @@ function updateMoleculeSpeeds(){
 function animate(){
 
   const pistonTop =
-    480 - state.V * volumeScale;
+    480 - state.V * state.volumeScale;
 
   molecules.forEach(m=>{
 
@@ -1214,6 +1237,9 @@ function updateLabels(){
     state.animationSpeed.toFixed(1)
     + " ×";
 
+  volumeScaleLabel.textContent =
+    state.volumeScale + " ×";
+
 }
 
 function updateAll(){
@@ -1382,6 +1408,15 @@ speedSlider.addEventListener(
     updateLabels();
 
   }
+);
+
+volumeScaleSlider.addEventListener(
+    "input",
+    ()=>{
+        state.volumeScale = volumeScaleSlider.value;
+        
+        updateAll();
+    }
 );
 
 document
