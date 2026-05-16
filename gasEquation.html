@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>気体状態方程式シミュレータ</title>
+
+<style>
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:40px;
+  min-height:100vh;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:32px;
+
+  background:
+    radial-gradient(circle at top,#243b55,#141e30);
+
+  font-family:
+    "Segoe UI",
+    "Hiragino Sans",
+    sans-serif;
+
+  color:white;
+}
+
+.container{
+  display:flex;
+  gap:32px;
+  width:min(1400px,95vw);
+}
+
+.sim-area{
+  flex:1;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.chamber{
+  position:relative;
+
+  width:360px;
+  height:520px;
+
+  border:
+    5px solid rgba(255,255,255,0.9);
+
+  border-top:none;
+
+  border-radius:0 0 28px 28px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.04),
+      rgba(255,255,255,0.08)
+    );
+
+  overflow:hidden;
+}
+
+.piston{
+  position:absolute;
+
+  left:-10px;
+  width:380px;
+  height:28px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      #ddd,
+      #888
+    );
+
+  border-radius:10px;
+
+  box-shadow:
+    0 4px 10px rgba(0,0,0,0.4);
+
+  transition:none;
+}
+
+.gas-layer{
+  position:absolute;
+  inset:0;
+}
+
+.molecule{
+
+  position:absolute;
+
+  border-radius:50%;
+
+  opacity:0.9;
+
+  will-change:transform;
+}
+
+.a{
+  background:#4fc3f7;
+}
+
+.b{
+  background:#ff8a65;
+}
+
+.c{
+  background:#81c784;
+}
+
+.panel{
+
+  width:min(760px,95vw);
+
+  background:
+    rgba(255,255,255,0.08);
+
+  border:
+    1px solid rgba(255,255,255,0.15);
+
+  backdrop-filter:blur(10px);
+
+  border-radius:24px;
+
+  padding:18px;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.3);
+}
+
+.panel-grid{
+
+  display:flex;
+
+  gap:24px;
+
+  align-items:flex-start;
+
+  margin-top:20px;
+
+  flex-wrap:wrap;
+
+}
+
+.panel-column{
+
+  flex:0.8;
+
+  min-width:260px;
+
+}
+    
+h1{
+  margin-top:0;
+  font-size:28px;
+}
+
+.section{
+  margin-top:16px;
+}
+
+.section-title{
+  font-size:18px;
+  margin-bottom:10px;
+  opacity:0.9;
+}
+
+.mode-group{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.mode-group label{
+  display:flex;
+  align-items:center;
+  gap:10px;
+
+  cursor:pointer;
+}
+
+.control{
+  margin-top:18px;
+}
+
+.control-header{
+  display:flex;
+  justify-content:space-between;
+
+  margin-bottom:6px;
+}
+
+input[type="range"]{
+  width:100%;
+}
+
+.gas-card{
+  margin-top:10px;
+
+  padding:10px;
+
+  border-radius:16px;
+
+  background:
+    rgba(255,255,255,0.06);
+}
+
+.gas-top{
+  display:flex;
+  justify-content:space-between;
+
+  margin-bottom:8px;
+}
+
+.partial-bar{
+  width:100%;
+  height:10px;
+
+  border-radius:999px;
+
+  overflow:hidden;
+
+  background:
+    rgba(255,255,255,0.08);
+
+  margin-top:8px;
+}
+
+.partial-fill{
+  height:100%;
+  border-radius:999px;
+}
+
+.bar-a{
+  background:#4fc3f7;
+}
+
+.bar-b{
+  background:#ff8a65;
+}
+
+.bar-c{
+  background:#81c784;
+}
+
+.info{
+  margin-top:16px;
+
+  padding:10px;
+
+  border-radius:16px;
+
+  background:
+    rgba(255,255,255,0.05);
+
+  line-height:1.5;
+}
+
+@media(max-width:1000px){
+
+  body{
+    padding:20px;
+    align-items:flex-start;
+  }
+
+  .container{
+    flex-direction:column;
+    align-items:center;
+  }
+
+  .panel{
+    width:min(95vw,500px);
+  }
+
+　.panel-grid{
+  　flex-direction:column;
+　}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="sim-area">
+
+    <div class="chamber">
+
+      <div class="gas-layer" id="gasLayer"></div>
+
+      <div class="piston" id="piston"></div>
+
+    </div>
+
+  </div>
+
+  <div class="panel">
+
+  <h1>気体の状態方程式シミュレータ</h1>
+
+  <div class="panel-grid">
+
+    <!-- 左 -->
+
+    <div class="panel-column">
+
+      <div class="info">
+
+        理想気体の状態方程式：
+        <br>
+
+        <b>PV = nRT</b>
+
+      </div>
+
+      <div class="section">
+
+        <div class="section-title">条件</div>
+
+        <div class="mode-group">
+
+          <label>
+            <input
+              type="radio"
+              name="mode"
+              value="constantP"
+              checked
+            >
+            定圧条件
+          </label>
+
+          <label>
+            <input
+              type="radio"
+              name="mode"
+              value="constantV"
+            >
+            定積条件
+          </label>
+
+          <label>
+            <input
+              type="radio"
+              name="mode"
+              value="constantT"
+            >
+            定温条件
+          </label>
+
+        </div>
+
+      </div>
+
+      <!-- 圧力 -->
+
+      <div class="control">
+
+        <div class="control-header">
+          <span>全圧 P</span>
+          <span id="pressureLabel"></span>
+        </div>
+
+        <input
+          type="range"
+          id="pressureSlider"
+          min="20"
+          max="500"
+          step="1"
+        >
+
+      </div>
+
+      <!-- 体積 -->
+
+      <div class="control">
+
+        <div class="control-header">
+          <span>体積 V</span>
+          <span id="volumeLabel"></span>
+        </div>
+
+        <input
+          type="range"
+          id="volumeSlider"
+          min="0"
+          max="30"
+          step="0.1"
+        >
+
+      </div>
+
+      <!-- 温度 -->
+
+      <div class="control">
+
+        <div class="control-header">
+          <span>絶対温度 T</span>
+          <span id="tempLabel"></span>
+        </div>
+
+        <input
+          type="range"
+          id="tempSlider"
+          min="1"
+          max="600"
+          step="1"
+        >
+
+      </div>
+
+      <div class="info">
+
+        壁衝突：
+        <span id="wallCollisionLabel">
+          0
+        </span>
+        回/s
+    
+        <br>
+    
+        ピストン衝突：
+        <span id="pistonCollisionLabel">
+          0
+        </span>
+        回/s
+    
+      </div>
+
+    </div>
+
+    <!-- 右 -->
+
+    <div class="panel-column">
+
+      <div class="control">
+
+          <div class="control-header">
+            <span>アニメーション速度</span>
+            <span id="speedLabel"></span>
+          </div>
+        
+          <input
+            type="range"
+            id="speedSlider"
+            min="0"
+            max="3"
+            step="0.1"
+            value="1"
+          >
+        
+      </div>
+
+      <div class="section">
+
+        <div class="section-title">
+          成分気体
+        </div>
+
+        <div id="gasControls"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+</div>
+
+<script>
+
+let wallHits = 0;
+let pistonHits = 0;
+
+const R = 8.314;
+
+const state = {
+
+　animationSpeed: 1,
+
+  P:100,
+  V:22.4,
+  T:273,
+
+  mode:"constantP",
+
+  gases:[
+    {
+      name:"A",
+      n:0.78,
+      p:0,
+      color:"bar-a",
+      class:"a",
+      size: 12,
+      visible: true
+    },
+    {
+      name:"B",
+      n:0.20,
+      p:0,
+      color:"bar-b",
+      class:"b",
+      size: 8,
+      visible: true
+    },
+    {
+      name:"C",
+      n:0.02,
+      p:0,
+      color:"bar-c",
+      class:"c",
+      size: 4,
+      visible: true
+    }
+  ],
+
+  wallCollisions:0,
+  pistonCollisions:0
+
+};
+
+const molecules = [];
+
+const pressureSlider =
+  document.getElementById("pressureSlider");
+
+const volumeSlider =
+  document.getElementById("volumeSlider");
+
+const tempSlider =
+  document.getElementById("tempSlider");
+
+const pressureLabel =
+  document.getElementById("pressureLabel");
+
+const volumeLabel =
+  document.getElementById("volumeLabel");
+
+const tempLabel =
+  document.getElementById("tempLabel");
+
+const gasControls =
+  document.getElementById("gasControls");
+
+const piston =
+  document.getElementById("piston");
+
+const gasLayer =
+  document.getElementById("gasLayer");
+
+const speedSlider =
+  document.getElementById("speedSlider");
+
+const speedLabel =
+  document.getElementById("speedLabel");
+
+const wallCollisionLabel =
+  document.getElementById(
+    "wallCollisionLabel"
+  );
+
+const pistonCollisionLabel =
+  document.getElementById(
+    "pistonCollisionLabel"
+  );
+
+function totalN(){
+
+  return state.gases.reduce(
+    (sum,g)=>sum+g.n,
+    0
+  );
+
+}
+
+function calcPressure(){
+
+  return totalN()*R*state.T/state.V;
+
+}
+
+function calcVolume(){
+
+  return totalN()*R*state.T/state.P;
+
+}
+
+function calcTemperature(){
+
+  return state.P*state.V/(totalN()*R);
+
+}
+
+function updatePartialPressures(){
+
+  const nTotal = totalN();
+
+  state.gases.forEach(g=>{
+
+    g.p = state.P * g.n / nTotal;
+
+  });
+
+}
+
+function updateSliderState(){
+
+  pressureSlider.disabled = true;
+  volumeSlider.disabled = true;
+  tempSlider.disabled = true;
+
+  if(state.mode==="constantP"){
+
+    volumeSlider.disabled = false;
+    tempSlider.disabled = false;
+
+  }
+
+  if(state.mode==="constantV"){
+
+    tempSlider.disabled = false;
+
+  }
+
+  if(state.mode==="constantT"){
+
+    pressureSlider.disabled = false;
+    volumeSlider.disabled = false;
+
+  }
+
+}
+
+function updatePiston(){
+
+  const y =
+    480 - state.V * 12;
+
+  piston.style.top = y + "px";
+
+}
+
+function createMolecules(){
+
+  const pistonTop =
+    480 - state.V * 12;
+
+  state.gases.forEach(g=>{
+
+    const target =
+      Math.floor(g.n * 20);
+
+    const current =
+      molecules.filter(
+        m=>m.gasClass===g.class
+      );
+
+    const diff =
+      target - current.length;
+
+    /* =====================
+       増やす
+    ===================== */
+
+    if(diff > 0){
+
+      for(let i=0;i<diff;i++){
+
+        const el =
+          document.createElement("div");
+
+        el.className =
+          `molecule ${g.class}`;
+        el.style.width =
+          g.size + "px";
+
+        el.style.height =
+          g.size + "px";
+
+        gasLayer.appendChild(el);
+
+        if(!g.visible){
+
+          el.style.display = "none";
+
+        }
+
+        const mol = {
+
+          el,
+
+          gasClass:g.class,
+
+          x:Math.random()*330,
+
+          y:
+            pistonTop +
+            Math.random()*200,
+
+          vx:0,
+          vy:0,
+
+          speedFactor:
+            0.5 + Math.random()
+
+        };
+
+        molecules.push(mol);
+
+      }
+
+    }
+
+    /* =====================
+       減らす
+    ===================== */
+
+    else if(diff < 0){
+
+      for(let i=0;i<Math.abs(diff);i++){
+
+        const mol =
+          current[i];
+
+        mol.el.remove();
+
+        const index =
+          molecules.indexOf(mol);
+
+        if(index !== -1){
+
+          molecules.splice(index,1);
+
+        }
+
+      }
+
+    }
+
+  });
+
+  updateMoleculeSpeeds();
+
+}
+
+function updateMoleculeSpeeds(){
+
+  const base =
+    Math.sqrt(state.T) * 0.50;
+
+  molecules.forEach(m=>{
+
+    let angle;
+
+    if(m.vx === 0 && m.vy === 0){
+
+      angle =
+        Math.random() * Math.PI * 2;
+
+    }
+
+    else{
+
+      angle =
+        Math.atan2(m.vy,m.vx);
+
+    }
+
+    const speed =
+      base * m.speedFactor;
+
+    m.vx =
+      Math.cos(angle) * speed;
+
+    m.vy =
+      Math.sin(angle) * speed;
+
+  });
+
+}
+
+function animate(){
+
+  const pistonTop =
+    480 - state.V * 12;
+
+  molecules.forEach(m=>{
+
+    m.x += m.vx * state.animationSpeed;
+    m.y += m.vy * state.animationSpeed;
+
+    if(m.x <= 0){
+
+      m.x = 0;
+      m.vx *= -1;
+      wallHits++;
+
+    }
+
+    if(m.x >= 348){
+
+      m.x = 348;
+      m.vx *= -1;
+      wallHits++;
+
+    }
+
+    if(m.y >= 510){
+
+      m.y = 510;
+      m.vy *= -1;
+      wallHits++;
+
+    }
+
+    if(m.y <= pistonTop + 28){
+
+      m.y = pistonTop + 28;
+      m.vy *= -1;
+      pistonHits++;
+
+    }
+
+    m.el.style.transform =
+      `translate(${m.x}px,${m.y}px)`;
+
+  });
+
+  requestAnimationFrame(animate);
+
+}
+
+function renderGasControls(){
+
+  gasControls.innerHTML = "";
+
+  state.gases.forEach((g,index)=>{
+
+    const div =
+      document.createElement("div");
+
+    div.className = "gas-card";
+    div.dataset.index = index;
+
+    div.innerHTML = `
+
+      <div class="gas-top">
+        <strong>気体 ${g.name}</strong>
+
+        <span class="gas-pressure">
+          p = ${g.p.toFixed(1)} kPa
+        </span>
+      </div>
+
+      <div class="gas-amount">
+        n = ${g.n.toFixed(2)} mol
+      </div>
+
+      <label style="
+        display:flex;
+        align-items:center;
+        gap:8px;
+          margin-top:8px;
+      ">
+
+      <input
+        type="checkbox"
+        class="visibility-toggle"
+        checked
+      >
+
+        表示
+
+      </label>
+
+      <input
+        type="range"
+        min="0"
+        max="5"
+        step="0.01"
+        value="${g.n}"
+      >
+
+      <div class="partial-bar">
+        <div
+          class="partial-fill ${g.color}"
+          style="
+            width:${g.p/state.P*100}%;
+          "
+        ></div>
+      </div>
+
+    `;
+
+    const slider =
+      div.querySelector(
+      'input[type="range"]'
+    );
+
+    const toggle =
+      div.querySelector(
+        ".visibility-toggle"
+    );
+
+    toggle.checked = g.visible;
+
+    toggle.addEventListener(
+      "change",
+      e=>{
+    
+        g.visible =
+          e.target.checked;
+    
+        molecules.forEach(m=>{
+    
+          if(m.gasClass === g.class){
+    
+            m.el.style.display =
+              g.visible
+              ? "block"
+              : "none";
+    
+          }
+    
+        });
+    
+      }
+    );
+
+    slider.addEventListener(
+      "input",
+      e=>{
+
+        g.n =
+          parseFloat(e.target.value);
+
+        if(state.mode==="constantV"){
+
+          state.P =
+            calcPressure();
+
+        }
+
+        else if(state.mode==="constantP"){
+
+          state.V =
+            calcVolume();
+
+        }
+
+        else if(state.mode==="constantT"){
+
+          state.P =
+            calcPressure();
+
+        }
+
+        updateAll();
+        createMolecules();
+
+      }
+    );
+
+    gasControls.appendChild(div);
+
+  });
+
+}
+
+function updateGasLabels(){
+
+  state.gases.forEach((g,index)=>{
+
+    const card =
+      document.querySelector(
+        `.gas-card[data-index="${index}"]`
+      );
+
+    if(!card) return;
+
+    card.querySelector(
+      ".gas-pressure"
+    ).textContent =
+      `p = ${g.p.toFixed(1)} kPa`;
+
+    card.querySelector(
+      ".gas-amount"
+    ).textContent =
+      `n = ${g.n.toFixed(2)} mol`;
+
+    card.querySelector(
+      ".partial-fill"
+    ).style.width =
+      `${g.p/state.P*100}%`;
+
+  });
+
+}
+
+function updateLabels(){
+
+  pressureLabel.textContent =
+    state.P.toFixed(1) + " kPa";
+
+  volumeLabel.textContent =
+    state.V.toFixed(2) + " L";
+
+  tempLabel.textContent =
+    state.T.toFixed(1) + " K";
+
+  speedLabel.textContent =
+    state.animationSpeed.toFixed(1)
+    + " ×";
+
+}
+
+function updateAll(){
+
+  updatePartialPressures();
+
+  updateLabels();
+
+  updateGasLabels();
+
+  updatePiston();
+
+}
+
+pressureSlider.addEventListener(
+  "input",
+  ()=>{
+
+    state.P =
+      parseFloat(
+        pressureSlider.value
+      );
+
+    if(state.mode==="constantT"){
+
+      state.V =
+        calcVolume();
+
+      volumeSlider.value =
+        state.V;
+    }
+
+    updateAll();
+
+  }
+);
+
+volumeSlider.addEventListener(
+  "input",
+  ()=>{
+
+    state.V =
+      parseFloat(
+        volumeSlider.value
+      );
+
+    if(state.mode==="constantP"){
+
+      state.T =
+        calcTemperature();
+
+      tempSlider.value =
+        state.T;
+
+      updateMoleculeSpeeds();
+
+    }
+
+    else if(state.mode==="constantT"){
+
+      state.P =
+        calcPressure();
+
+      pressureSlider.value =
+        state.P;
+
+    }
+
+    updateAll();
+
+  }
+);
+
+tempSlider.addEventListener(
+  "input",
+  ()=>{
+
+    state.T =
+      parseFloat(
+        tempSlider.value
+      );
+
+    if(state.mode==="constantV"){
+
+      state.P =
+        calcPressure();
+
+      pressureSlider.value =
+        state.P;
+
+    }
+
+    else if(state.mode==="constantP"){
+
+      state.V =
+        calcVolume();
+
+      volumeSlider.value =
+        state.V;
+
+    }
+
+    updateMoleculeSpeeds();
+
+    updateAll();
+
+  }
+);
+
+speedSlider.addEventListener(
+  "input",
+  ()=>{
+
+    state.animationSpeed =
+      parseFloat(speedSlider.value);
+
+    updateLabels();
+
+  }
+);
+
+document
+.querySelectorAll(
+  'input[name="mode"]'
+)
+.forEach(r=>{
+
+  r.addEventListener(
+    "change",
+    ()=>{
+
+      state.mode = r.value;
+
+      updateSliderState();
+
+      updateAll();
+
+    }
+  );
+
+});
+
+state.P = calcPressure();
+
+pressureSlider.value =
+  state.P;
+
+volumeSlider.value =
+  state.V;
+
+tempSlider.value =
+  state.T;
+
+speedSlider.value =
+  state.animationSpeed;
+
+renderGasControls();
+
+createMolecules();
+
+animate();
+
+updateAll();
+
+updateSliderState();
+
+setInterval(()=>{
+
+  state.wallCollisions =
+    Math.floor(wallHits / state.animationSpeed);
+
+  state.pistonCollisions =
+    Math.floor(pistonHits / state.animationSpeed);
+
+  wallCollisionLabel.textContent =
+    Math.floor(wallHits / state.animationSpeed);
+
+  pistonCollisionLabel.textContent =
+    Math.floor(pistonHits / state.animationSpeed);
+
+  wallHits = 0;
+  pistonHits = 0;
+
+},1000);
+
+</script>
+
+</body>
+</html>
