@@ -1716,41 +1716,43 @@
 
       /* 軌跡 */
 
-      if(pvtHistory.length < 2) return;
+      if(pvtHistory.length >= 2){
 
-      ctx.strokeStyle =
-        "#4fc3f7";
+        ctx.strokeStyle =
+          "#4fc3f7";
 
-      ctx.lineWidth = 2;
+        ctx.lineWidth = 2;
 
-      ctx.beginPath();
+        ctx.beginPath();
 
-      pvtHistory.forEach((p,i)=>{
+        pvtHistory.forEach((p,i)=>{
 
-        const x =
-          GRAPH_X +
-          (p.V/maxV)*GRAPH_W;
+          const x =
+            GRAPH_X +
+            (p.V/maxV)*GRAPH_W;
 
-        const y =
-          GRAPH_Y +
-          GRAPH_H -
-          (p.P/maxP)*GRAPH_H;
+          const y =
+            GRAPH_Y +
+            GRAPH_H -
+            (p.P/maxP)*GRAPH_H;
 
-        if(i===0){
+          if(i===0){
 
-          ctx.moveTo(x,y);
+            ctx.moveTo(x,y);
 
-        }
+          }
 
-        else{
+          else{
 
-          ctx.lineTo(x,y);
+            ctx.lineTo(x,y);
 
-        }
+          }
 
-      });
+        });
 
-      ctx.stroke();
+        ctx.stroke();
+
+      }
 
       /* 現在点 */
 
@@ -1924,41 +1926,43 @@
 
       /* 軌跡 */
 
-      if(pvtHistory.length < 2) return;
+      if(pvtHistory.length >= 2){
 
-      ptCtx.strokeStyle =
-        "#ff8a65";
+        ptCtx.strokeStyle =
+          "#ff8a65";
 
-      ptCtx.lineWidth = 2;
+        ptCtx.lineWidth = 2;
 
-      ptCtx.beginPath();
+        ptCtx.beginPath();
 
-      pvtHistory.forEach((p,i)=>{
+        pvtHistory.forEach((p,i)=>{
 
-        const x =
-          GRAPH_X +
-          (p.T/maxT)*GRAPH_W;
+          const x =
+            GRAPH_X +
+            (p.T/maxT)*GRAPH_W;
 
-        const y =
-          GRAPH_Y +
-          GRAPH_H -
-          (p.P/maxP)*GRAPH_H;
+          const y =
+            GRAPH_Y +
+            GRAPH_H -
+            (p.P/maxP)*GRAPH_H;
 
-        if(i===0){
+          if(i===0){
 
-          ptCtx.moveTo(x,y);
+            ptCtx.moveTo(x,y);
 
-        }
+          }
 
-        else{
+          else{
 
-          ptCtx.lineTo(x,y);
+            ptCtx.lineTo(x,y);
 
-        }
+          }
 
-      });
+        });
 
-      ptCtx.stroke();
+        ptCtx.stroke();
+
+      }
 
       /* 現在点 */
 
@@ -1991,7 +1995,7 @@
 
       updatePartialPressures();
 
-    pressureSlider.value =
+      pressureSlider.value =
         state.P;
 
       volumeSlider.value =
