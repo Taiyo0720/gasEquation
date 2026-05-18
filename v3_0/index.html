@@ -482,10 +482,6 @@
 
     }
 
-    #volumeScaleSlider{
-      accent-color:white;
-    }
-
     .top-row{
       display:flex;
 
@@ -551,6 +547,55 @@
     #resetGraphButton:active{
 
       transform:scale(0.96);
+    }
+
+    .panel-switch{
+
+      display:flex;
+
+      gap:10px;
+    }
+
+    .switch-btn{
+
+      flex:1;
+
+      padding:12px;
+
+      border:none;
+
+      border-radius:14px;
+
+      cursor:pointer;
+
+      color:white;
+
+      font-size:15px;
+
+      background:
+        rgba(255,255,255,0.08);
+
+      transition:
+        0.2s;
+    }
+
+    .switch-btn:hover{
+
+      background:
+        rgba(255,255,255,0.14);
+    }
+
+    .switch-btn.active{
+
+      background:
+        rgba(255,255,255,0.22);
+
+      box-shadow:
+        0 0 12px rgba(255,255,255,0.15);
+    }
+
+    .hidden-panel{
+      display:none;
     }
 
     @media(max-width:1200px){
@@ -621,7 +666,24 @@
     </div>
 
     <div class="right-side">
-      <div class="main-panel">
+      <div class="panel-switch">
+
+        <button
+          class="switch-btn active"
+          id="mainTab"
+        >
+          グラフ・PVT
+        </button>
+
+        <button
+          class="switch-btn"
+          id="subTab"
+        >
+          詳細設定
+        </button>
+
+      </div>
+      <div class="main-panel" id="mainPanel">
 
         <div class="graph-header">
 
@@ -703,28 +765,81 @@
             >
 
           </div>
+
+          <div class="info">
+
+            気体分子とピストンの衝突：
+            <span id="pistonCollisionLabel">
+              0
+            </span>
+            回/s
+
+            <br>
+
+            （運動量：
+            <span id="collisionMomentumLabel">
+              0
+            </span>
+            /s）
+        
+          </div>
         </div>
       </div>
-      <div class="sub-panel">
+      <div class="sub-panel hidden-panel" id="subPanel">
         <h1>
           理想気体の状態方程式シミュレータ
         </h1>
 
+        <div class="info">
+
+          理想気体の状態方程式：
+
+          <br>
+
+          <b>PV = nRT</b>
+
+        </div>
+
+        <div class="panel-switch sub-switch">
+
+          <button
+            class="switch-btn active"
+            id="basicTab"
+          >
+            基本設定
+          </button>
+
+          <button
+            class="switch-btn"
+            id="gasTab"
+          >
+            成分気体
+          </button>
+
+        </div>
+
         <div class="panel-grid">
+
+          <div
+            class="panel-column hidden-panel"
+            id="gasPanel"
+          >
+
+            <div class="section">
+
+              <div class="section-title">
+                成分気体
+              </div>
+
+              <div id="gasControls"></div>
+
+            </div>
+
+          </div>
 
           <!-- 左 -->
 
-          <div class="panel-column">
-
-            <div class="info">
-
-              理想気体の状態方程式：
-
-              <br>
-
-              <b>PV = nRT</b>
-
-            </div>
+          <div class="panel-column" id="basicPanel">
 
             <div class="section">
 
@@ -776,7 +891,7 @@
               <div class="control">
 
                 <div class="control-header">
-                  <span>体積スケール（必要に応じて変更）</span>
+                  <span>アニメーション体積スケール</span>
                   <span id="volumeScaleLabel"></span>
                 </div>
 
@@ -809,34 +924,6 @@
               
               </div>
 
-            </div>
-
-            <div class="section">
-
-              <div class="section-title">
-                成分気体
-              </div>
-
-              <div id="gasControls"></div>
-
-            </div>
-
-            <div class="info">
-
-              気体分子とピストンの衝突：
-              <span id="pistonCollisionLabel">
-                0
-              </span>
-              回/s
-
-              <br>
-
-              （運動量：
-              <span id="collisionMomentumLabel">
-                0
-              </span>
-              /s）
-          
             </div>
 
           </div>
@@ -986,7 +1073,8 @@
     const GRAPH_H = 240;
 
     const maxP = 500;
-    const maxV = 30;
+    const maxV = 120;
+    const maxT = 600;
 
     const resetGraphButton =
       document.getElementById(
@@ -1695,15 +1783,6 @@
 
       ptCtx.clearRect(0,0,420,320);
 
-      const GRAPH_X = 40;
-      const GRAPH_Y = 20;
-
-      const GRAPH_W = 340;
-      const GRAPH_H = 240;
-
-      const maxP = 500;
-      const maxT = 600;
-
       /* 背景 */
 
       ptCtx.fillStyle =
@@ -2163,6 +2242,126 @@
       pistonHits = 0;
 
     },3000);
+
+/*==================
+      UI
+==================*/
+
+    const mainTab =
+      document.getElementById("mainTab");
+
+    const subTab =
+      document.getElementById("subTab");
+
+    const mainPanel =
+      document.getElementById("mainPanel");
+
+    const subPanel =
+      document.getElementById("subPanel");
+
+    mainTab.addEventListener(
+      "click",
+      ()=>{
+
+        mainPanel.classList.remove(
+          "hidden-panel"
+        );
+
+        subPanel.classList.add(
+          "hidden-panel"
+        );
+
+        mainTab.classList.add(
+          "active"
+        );
+
+        subTab.classList.remove(
+          "active"
+        );
+
+      }
+    );
+
+    subTab.addEventListener(
+      "click",
+      ()=>{
+
+        subPanel.classList.remove(
+          "hidden-panel"
+        );
+
+        mainPanel.classList.add(
+          "hidden-panel"
+        );
+
+        subTab.classList.add(
+          "active"
+        );
+
+        mainTab.classList.remove(
+          "active"
+        );
+
+      }
+    );
+
+    const basicTab =
+      document.getElementById("basicTab");
+
+    const gasTab =
+      document.getElementById("gasTab");
+
+    const basicPanel =
+      document.getElementById("basicPanel");
+
+    const gasPanel =
+      document.getElementById("gasPanel");
+
+    basicTab.addEventListener(
+      "click",
+      ()=>{
+
+        basicPanel.classList.remove(
+          "hidden-panel"
+        );
+
+        gasPanel.classList.add(
+          "hidden-panel"
+        );
+
+        basicTab.classList.add(
+          "active"
+        );
+
+        gasTab.classList.remove(
+          "active"
+        );
+
+      }
+    );
+
+    gasTab.addEventListener(
+      "click",
+      ()=>{
+
+        gasPanel.classList.remove(
+          "hidden-panel"
+        );
+
+        basicPanel.classList.add(
+          "hidden-panel"
+        );
+
+        gasTab.classList.add(
+          "active"
+        );
+
+        basicTab.classList.remove(
+          "active"
+        );
+
+      }
+    );
 
   </script>
 
